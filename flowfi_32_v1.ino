@@ -30,7 +30,7 @@
 #include <WebServer.h>
 
 // ---------------- WiFi AP settings ----------------
-const char* ssid     = "My Contact Card";   // Name shown when scanning WiFi
+const char* ssid     = "ajmaleee Contact Card";   // Name shown when scanning WiFi
 const char* password = "";                  // "" = open network (recommended for
                                              // auto-popup). If you set one, it
                                              // must be 8+ chars.
@@ -41,16 +41,16 @@ DNSServer dnsServer;
 WebServer server(80);
 
 // ---------------- EDIT YOUR DETAILS HERE ----------------
-const char* MY_NAME        = "Your Name";
+const char* MY_NAME        = "Ajmaleee__";
 // Leave INITIALS empty ("") to auto-generate from MY_NAME, or set your own
 // (e.g. "AB") if the auto version doesn't look right.
-const char* INITIALS       = "";
-const char* PHONE_NUMBER   = "+911234567890";      // used for tel: and sms:
-const char* WHATSAPP_NUMBER= "911234567890";       // digits only, country code, no + no spaces
-const char* EMAIL          = "you@example.com";
-const char* LINKEDIN_URL   = "https://linkedin.com/in/yourprofile";
-const char* INSTAGRAM_URL  = "https://instagram.com/yourhandle";
-const char* GITHUB_URL     = "https://github.com/yourhandle";
+const char* INITIALS       = "AJ";
+const char* PHONE_NUMBER   = "+919495050785";      // used for tel: and sms:
+const char* WHATSAPP_NUMBER= "919495050785";       // digits only, country code, no + no spaces
+const char* EMAIL          = "ajmalsworkshop@gmail.com";
+const char* LINKEDIN_URL   = "https://linkedin.com/in/ajmaleee";
+const char* INSTAGRAM_URL  = "https://instagram.com/ajmaleee__";
+const char* GITHUB_URL     = "https://github.com/ajmaleee";
 // ----------------------------------------------------------
 
 // Builds up to 2 initials from MY_NAME (e.g. "Jane Doe" -> "JD") if
