@@ -33,7 +33,7 @@
 #include <WebServer.h>
 
 // ---------------- WiFi AP settings ----------------
-const char* ssid     = "My Contact Card";   // Name shown when scanning WiFi
+const char* ssid     = "Ajmaleee__";   // Name shown when scanning WiFi
 const char* password = "";                  // "" = open network (recommended for
                                              // auto-popup). If you set one, it
                                              // must be 8+ chars.
@@ -54,11 +54,11 @@ const char* MY_NAME        = "AJMAL ALI";
 // Leave INITIALS empty ("") to auto-generate from MY_NAME, or set your own
 // (e.g. "AB") if the auto version doesn't look right.
 const char* INITIALS       = "";
-const char* PHONE_NUMBER   = "+910405050785";      // used for tel: and sms:
-const char* WHATSAPP_NUMBER= "910405050785";       // digits only, country code, no + no spaces
+const char* PHONE_NUMBER   = "+911234567890";      // used for tel: and sms:
+const char* WHATSAPP_NUMBER= "911234567890";       // digits only, country code, no + no spaces
 const char* EMAIL          = "ajmalsworkshop@gmail.com";
-const char* LINKEDIN_URL   = "https://linkedin.com/in/ajmaleee";
-const char* INSTAGRAM_URL  = "https://instagram.com/ajmaleee__";
+const char* LINKEDIN_URL   = "https://www.linkedin.com/in/ajmal-ali-a-380075325/";
+const char* INSTAGRAM_URL  = "https://www.instagram.com/gpio_goblin/";
 const char* GITHUB_URL     = "https://github.com/ajmaleee";
 // ----------------------------------------------------------
 
