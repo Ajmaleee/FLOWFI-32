@@ -23,6 +23,9 @@
   board with less flash (e.g. an ESP32-C3 Super Mini variant with 2MB),
   it will still fit, just pick "Minimal SPIFFS" or "No OTA" partition
   scheme in Tools > Partition Scheme if you ever add more code later.
+
+
+  v1.2  -m "fixed board not showing AP"
 */
 
 #include <WiFi.h>
@@ -30,7 +33,7 @@
 #include <WebServer.h>
 
 // ---------------- WiFi AP settings ----------------
-const char* ssid     = "ajmaleee Contact Card";   // Name shown when scanning WiFi
+const char* ssid     = "My Contact Card";   // Name shown when scanning WiFi
 const char* password = "";                  // "" = open network (recommended for
                                              // auto-popup). If you set one, it
                                              // must be 8+ chars.
@@ -40,13 +43,19 @@ IPAddress apIP(192, 168, 4, 1);
 DNSServer dnsServer;
 WebServer server(80);
 
+// The finished HTML is built ONCE in setup() and kept here. Every request
+// just hands out this same buffer — nothing is rebuilt or re-allocated
+// per visitor, which is what keeps the board from running low on heap
+// and rebooting when several phones hit the captive-portal check at once.
+String cachedPage;
+
 // ---------------- EDIT YOUR DETAILS HERE ----------------
-const char* MY_NAME        = "Ajmaleee__";
+const char* MY_NAME        = "AJMAL ALI";
 // Leave INITIALS empty ("") to auto-generate from MY_NAME, or set your own
 // (e.g. "AB") if the auto version doesn't look right.
-const char* INITIALS       = "AJ";
-const char* PHONE_NUMBER   = "+919495050785";      // used for tel: and sms:
-const char* WHATSAPP_NUMBER= "919495050785";       // digits only, country code, no + no spaces
+const char* INITIALS       = "";
+const char* PHONE_NUMBER   = "+910405050785";      // used for tel: and sms:
+const char* WHATSAPP_NUMBER= "910405050785";       // digits only, country code, no + no spaces
 const char* EMAIL          = "ajmalsworkshop@gmail.com";
 const char* LINKEDIN_URL   = "https://linkedin.com/in/ajmaleee";
 const char* INSTAGRAM_URL  = "https://instagram.com/ajmaleee__";
@@ -68,7 +77,7 @@ String getInitials() {
   return out.length() ? out : "?";
 }
 
-String htmlPage() {
+String buildPage() {
   String page = R"rawliteral(
 <!DOCTYPE html>
 <html lang="en">
@@ -151,8 +160,6 @@ String htmlPage() {
     cursor:pointer;
     box-shadow:7px 7px 14px var(--shadow-dark),-7px -7px 14px var(--shadow-light);
     transition:box-shadow .12s ease, transform .12s ease;
-    opacity:0;
-    animation:rise .5s ease forwards;
   }
   .btn:active{
     box-shadow:inset 5px 5px 10px var(--shadow-dark),inset -5px -5px 10px var(--shadow-light);
@@ -210,24 +217,9 @@ String htmlPage() {
   .wa-btn:focus-visible{outline:2px solid var(--accent-dark);outline-offset:3px;}
   footer{text-align:center;font-size:11px;color:var(--ink-soft);margin-top:22px;}
 
-  @keyframes rise{
-    from{opacity:0;transform:translateY(10px);}
-    to{opacity:1;transform:translateY(0);}
-  }
-  .stack .btn:nth-child(1){animation-delay:.05s;}
-  .stack .btn:nth-child(2){animation-delay:.10s;}
-  .stack .btn:nth-child(3){animation-delay:.15s;}
-  .stack .btn:nth-child(4){animation-delay:.20s;}
-  .stack .btn:nth-child(5){animation-delay:.25s;}
-  .stack .btn:nth-child(6){animation-delay:.30s;}
-
   @media (min-width:460px){
     .card{max-width:420px;}
     .avatar{width:96px;height:96px;font-size:32px;}
-  }
-
-  @media (prefers-reduced-motion:reduce){
-    .btn{animation:none;opacity:1;}
   }
 </style>
 </head>
@@ -308,7 +300,10 @@ function sendWA(){
 }
 
 void handleRoot() {
-  server.send(200, "text/html", htmlPage());
+  // Sent whole, in one response (Content-Length is known up front, so
+  // WebServer does NOT chunk this) — the browser gets the full page in
+  // a single reply instead of it trickling in.
+  server.send(200, "text/html", cachedPage);
 }
 
 // Any request the OS doesn't recognize as a known captive-portal probe
@@ -321,12 +316,36 @@ void handleNotFound() {
 
 void setup() {
   Serial.begin(115200);
+  delay(300); // let the serial monitor attach before we start printing
 
+  // --- Wi-Fi AP bring-up ---
+  // Order matters on the 3.x core: start the AP radio FIRST, THEN apply
+  // the IP config, with a short settle delay in between. Doing
+  // softAPConfig() before softAP() (as in an earlier version of this
+  // sketch) can leave the AP half-initialized — it won't broadcast an
+  // SSID, and depending on the board that unstable state can crash and
+  // reboot, which is why the serial monitor was showing a fresh IP
+  // print every second or two (the board was looping through setup()
+  // over and over, not actually staying up).
+  WiFi.persistent(false);   // don't write Wi-Fi config to flash every boot
   WiFi.mode(WIFI_AP);
+  WiFi.disconnect(true);    // clear any stale STA state left over from before
+  delay(100);
+
+  bool apStarted = WiFi.softAP(ssid, password);
+  delay(200); // give the radio time to actually come up
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
-  WiFi.softAP(ssid, password);
+
+  if (!apStarted) {
+    Serial.println("WiFi.softAP() FAILED to start.");
+    Serial.println("Common causes: password shorter than 8 characters,");
+    Serial.println("or a brownout from insufficient USB power.");
+  }
 
   dnsServer.start(DNS_PORT, "*", apIP);
+
+  // Build the page once now, not on every request (see cachedPage above).
+  cachedPage = buildPage();
 
   server.on("/", handleRoot);
   // Known OS captive-portal check URLs — serve the page directly on these too
@@ -341,9 +360,22 @@ void setup() {
   server.onNotFound(handleNotFound);
   server.begin();
 
-  Serial.println("Captive portal started");
+  Serial.println("---------------------------------");
+  Serial.println(apStarted ? "Captive portal started OK" : "Captive portal started with errors — see above");
+  Serial.print("SSID: ");
+  Serial.println(ssid);
   Serial.print("AP IP: ");
   Serial.println(WiFi.softAPIP());
+  Serial.print("Page size: ");
+  Serial.print(cachedPage.length());
+  Serial.println(" bytes");
+  Serial.print("Free heap after setup: ");
+  Serial.println(ESP.getFreeHeap());
+  Serial.println("---------------------------------");
+  Serial.println("If this block prints again on its own a second or two");
+  Serial.println("from now, the board is rebooting (likely a power/brownout");
+  Serial.println("issue) — try a different USB cable/port, or a cable");
+  Serial.println("capable of supplying more current.");
 }
 
 void loop() {
